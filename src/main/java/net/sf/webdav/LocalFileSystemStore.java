@@ -49,10 +49,6 @@ public class LocalFileSystemStore implements IWebdavStore {
         _root = root;
     }
 
-    public void destroy() {
-        ;
-    }
-
     public ITransaction begin(Principal principal) throws WebdavException {
         LOG.trace("LocalFileSystemStore.begin()");
         if (!_root.exists()) {

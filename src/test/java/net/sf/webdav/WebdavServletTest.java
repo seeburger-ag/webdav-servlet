@@ -58,7 +58,7 @@ public class WebdavServletTest extends MockTest {
 
     @Test
     public void testInit() throws Exception {
-    	
+
         _mockery.checking(new Expectations() {
         });
 

@@ -1,7 +1,6 @@
 package net.sf.webdav.methods;
 
 import java.io.ByteArrayInputStream;
-import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -144,8 +143,6 @@ public class DoGetTest extends MockTest {
                 will(returnValue("/foo/"));
 
                 StoredObject fooSo = initFolderStoredObject();
-                StoredObject aaa = initFolderStoredObject();
-                StoredObject bbb = initFolderStoredObject();
 
                 one(mockStore).getStoredObject(mockTransaction, "/foo/");
                 will(returnValue(fooSo));
@@ -156,12 +153,6 @@ public class DoGetTest extends MockTest {
                 one(mockStore).getStoredObject(mockTransaction, "/foo/");
                 will(returnValue(fooSo));
 
-                one(mockReq).getLocale();
-                will(returnValue(Locale.GERMAN));
-                
-                one(mockRes).setContentType("text/html");
-				one(mockRes).setCharacterEncoding("UTF8");
-                
                 tos = new TestingOutputStream();
 
                 one(mockRes).getOutputStream();
@@ -169,13 +160,6 @@ public class DoGetTest extends MockTest {
 
                 one(mockStore).getChildrenNames(mockTransaction, "/foo/");
                 will(returnValue(new String[] { "AAA", "BBB" }));
-                
-                one(mockStore).getStoredObject(mockTransaction, "/foo//AAA");
-                will(returnValue(aaa));
-
-                one(mockStore).getStoredObject(mockTransaction, "/foo//BBB");
-				will(returnValue(bbb));
-
             }
         });
 
@@ -184,7 +168,7 @@ public class DoGetTest extends MockTest {
 
         doGet.execute(mockTransaction, mockReq, mockRes);
 
-        assertTrue(tos.toString().length() > 0);
+        assertEquals("Contents of this Folder:\nAAA\nBBB\n", tos.toString());
 
         _mockery.assertIsSatisfied();
     }

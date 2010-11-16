@@ -18,8 +18,10 @@ package net.sf.webdav.methods;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Locale;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -43,6 +45,7 @@ public class DoGet extends DoHead {
 
     }
 
+    @Override
     protected void doBody(ITransaction transaction, HttpServletResponse resp,
             String path) {
 
@@ -86,6 +89,7 @@ public class DoGet extends DoHead {
         }
     }
 
+    @Override
     protected void folderBody(ITransaction transaction, String path,
             HttpServletResponse resp, HttpServletRequest req)
             throws IOException {
@@ -107,14 +111,13 @@ public class DoGet extends DoHead {
             if (so.isFolder()) {
                 // TODO some folder response (for browsers, DAV tools
                 // use propfind) in html?
-				Locale locale = req.getLocale();
-
-				resp.setContentType("text/html");
+                DateFormat shortDF= getDateTimeFormat(req.getLocale());
+                resp.setContentType("text/html");
                 resp.setCharacterEncoding("UTF8");
                 OutputStream out = resp.getOutputStream();
                 String[] children = _store.getChildrenNames(transaction, path);
                 children = children == null ? new String[] {} : children;
-                StringBuffer childrenTemp = new StringBuffer();
+                StringBuilder childrenTemp = new StringBuilder();
                 childrenTemp.append("<html><head><title>Content of folder");
                 childrenTemp.append(path);
                 childrenTemp.append("</title><style type=\"text/css\">");
@@ -128,46 +131,53 @@ public class DoGet extends DoHead {
                 childrenTemp.append("<td colspan=\"4\"><a href=\"../\">Parent</a></td></tr>");
                 boolean isEven= false;
                 for (String child : children) {
-					isEven = !isEven;
-					childrenTemp.append("<tr class=\"");
-					childrenTemp.append(isEven ? "even" : "odd");
-					childrenTemp.append("\">");
-					childrenTemp.append("<td>");
-					childrenTemp.append("<a href=\"");
-					childrenTemp.append(child);
-					StoredObject obj = _store.getStoredObject(transaction, path
-							+ "/" + child);
-					if (obj.isFolder()) {
-						childrenTemp.append("/");
-					}
-					childrenTemp.append("\">");
-					childrenTemp.append(child);
-					childrenTemp.append("</a></td>");
-					if (obj.isFolder()) {
-						childrenTemp.append("<td>Folder</td>");
-					} else {
-						childrenTemp.append("<td>");
-						childrenTemp.append(obj.getResourceLength());
-						childrenTemp.append(" Bytes</td>");
-					}
-					if (obj.getCreationDate() != null) {
-						childrenTemp.append("<td>");
-						childrenTemp.append( getLocalDateFormat(obj.getCreationDate(), locale) );
-
-						childrenTemp.append("</td>");
-					} else {
-						childrenTemp.append("<td></td>");
-					}
-					if (obj.getLastModified() != null) {
-						childrenTemp.append("<td>");
-						childrenTemp.append(getLocalDateFormat(obj.getLastModified(), locale));
-
-						childrenTemp.append("</td>");
-					} else {
-						childrenTemp.append("<td></td>");
-					}
-					childrenTemp.append("</tr>");
-				}
+                    isEven= !isEven;
+                    childrenTemp.append("<tr class=\"");
+                    childrenTemp.append(isEven ? "even" : "odd");
+                    childrenTemp.append("\">");
+                    childrenTemp.append("<td>");
+                    childrenTemp.append("<a href=\"");
+                    childrenTemp.append(child);
+                    StoredObject obj= _store.getStoredObject(transaction, path+"/"+child);
+                    if (obj.isFolder())
+                    {
+                        childrenTemp.append("/");
+                    }
+                    childrenTemp.append("\">");
+                    childrenTemp.append(child);
+                    childrenTemp.append("</a></td>");
+                    if (obj.isFolder())
+                    {
+                        childrenTemp.append("<td>Folder</td>");
+                    }
+                    else
+                    {
+                        childrenTemp.append("<td>");
+                        childrenTemp.append(obj.getResourceLength());
+                        childrenTemp.append(" Bytes</td>");
+                    }
+                    if (obj.getCreationDate() != null)
+                    {
+                        childrenTemp.append("<td>");
+                        childrenTemp.append(shortDF.format(obj.getCreationDate()));
+                        childrenTemp.append("</td>");
+                    }
+                    else
+                    {
+                        childrenTemp.append("<td></td>");
+                    }
+                    if (obj.getLastModified() != null)
+                    {
+                        childrenTemp.append("<td>");
+                        childrenTemp.append(shortDF.format(obj.getLastModified()));
+                        childrenTemp.append("</td>");
+                    }
+                    else
+                    {
+                        childrenTemp.append("<td></td>");
+                    }
+                    childrenTemp.append("</tr>");
+                }
                 childrenTemp.append("</table>");
                 childrenTemp.append(getFooter(transaction, path, resp, req));
                 childrenTemp.append("</body></html>");
@@ -180,7 +190,7 @@ public class DoGet extends DoHead {
      * Return the CSS styles used to display the HTML representation
      * of the webdav content.
      * 
-     * @return
+     * @return String returning the CSS style sheet used to display result in html format
      */
     protected String getCSS()
     {
@@ -222,12 +232,12 @@ public class DoGet extends DoHead {
             if(iStream != null)
             {
                 // Found css via class loader, use that one
-                StringBuffer out = new StringBuffer();
+                StringBuilder out = new StringBuilder();
                 byte[] b = new byte[4096];
                 for (int n; (n = iStream.read(b)) != -1;)
                 {
                     out.append(new String(b, 0, n));
-}
+                }
                 retVal= out.toString();
             }
         }
@@ -240,13 +250,24 @@ public class DoGet extends DoHead {
     }
 
     /**
+     * Return this as the Date/Time format for displaying Creation + Modification dates
+     * 
+     * @param browserLocale
+     * @return DateFormat used to display creation and modification dates
+     */
+    protected DateFormat getDateTimeFormat(Locale browserLocale)
+    {
+        return SimpleDateFormat.getDateTimeInstance(SimpleDateFormat.SHORT, SimpleDateFormat.MEDIUM, browserLocale);
+    }
+
+    /**
      * Return the header to be displayed in front of the folder content
      * 
      * @param transaction
      * @param path
      * @param resp
      * @param req
-     * @return
+     * @return String representing the header to be display in front of the folder content
      */
     protected String getHeader(ITransaction transaction, String path,
             HttpServletResponse resp, HttpServletRequest req)
@@ -261,7 +282,7 @@ public class DoGet extends DoHead {
      * @param path
      * @param resp
      * @param req
-     * @return
+     * @return String representing the footer to be displayed after the folder content
      */
     protected String getFooter(ITransaction transaction, String path,
             HttpServletResponse resp, HttpServletRequest req)

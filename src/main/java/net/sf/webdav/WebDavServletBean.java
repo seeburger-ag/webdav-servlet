@@ -46,8 +46,8 @@ public class WebDavServletBean extends HttpServlet {
     protected static final MD5Encoder MD5_ENCODER = new MD5Encoder();
 
     private static final boolean READ_ONLY = false;
-	protected ResourceLocks _resLocks;
-	protected IWebdavStore _store;
+    private ResourceLocks _resLocks;
+    private IWebdavStore _store;
     private HashMap<String, IMethodExecutor> _methodMap = new HashMap<String, IMethodExecutor>();
 
     public WebDavServletBean() {
@@ -92,13 +92,7 @@ public class WebDavServletBean extends HttpServlet {
         register("*NO*IMPL*", new DoNotImplemented(READ_ONLY));
     }
 
-    public void destroy() {
-        if(_store != null)
-            _store.destroy();
-        super.destroy();
-    }
-
-    protected IMethodExecutor register(String methodName, IMethodExecutor method) {
+    private IMethodExecutor register(String methodName, IMethodExecutor method) {
         _methodMap.put(methodName, method);
         return method;
     }
@@ -106,6 +100,7 @@ public class WebDavServletBean extends HttpServlet {
     /**
      * Handles the special WebDAV methods.
      */
+    @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 

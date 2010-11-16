@@ -53,7 +53,7 @@ public class LockedObject {
     protected String _type = null;
 
     /**
-     * @param _resourceLocks
+     * @param resLocks
      *      the resourceLocks where locks are stored
      * @param path
      *      the path to the locked object
@@ -122,9 +122,8 @@ public class LockedObject {
                     // check every owner if it is the requested one
                     if (_owner[i].equals(owner)) {
                         // remove the owner
-                    	size -= 1;
-                        String[] newLockedObjectOwner = new String[size];
-                        for (int j = 0; j < size; j++) {
+                        String[] newLockedObjectOwner = new String[size - 1];
+                        for (int j = 0; j < (size - 1); j++) {
                             if (j < i) {
                                 newLockedObjectOwner[j] = _owner[j];
                             } else {

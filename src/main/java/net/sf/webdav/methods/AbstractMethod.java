@@ -18,9 +18,7 @@ package net.sf.webdav.methods;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -46,10 +44,6 @@ import net.sf.webdav.locking.LockedObject;
 
 public abstract class AbstractMethod implements IMethodExecutor {
 
-    private static final ThreadLocal<DateFormat> thLastmodifiedDateFormat = new ThreadLocal<DateFormat>();
-    private static final ThreadLocal<DateFormat> thCreationDateFormat = new ThreadLocal<DateFormat>();
-    private static final ThreadLocal<DateFormat> thLocalDateFormat = new ThreadLocal<DateFormat>();
-    
     /**
      * Array containing the safe characters set.
      */
@@ -64,17 +58,19 @@ public abstract class AbstractMethod implements IMethodExecutor {
      * Simple date format for the creation date ISO 8601 representation
      * (partial).
      */
-    protected static final String CREATION_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+    protected static final SimpleDateFormat CREATION_DATE_FORMAT = new SimpleDateFormat(
+            "yyyy-MM-dd'T'HH:mm:ss'Z'");
 
     /**
      * Simple date format for the last modified date. (RFC 822 updated by RFC
      * 1123)
      */
-    protected static final String LAST_MODIFIED_DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss z";
-    
-    protected static final String LOCAL_DATE_FORMAT = "dd/MM/yy' 'HH:mm:ss";
+    protected static final SimpleDateFormat LAST_MODIFIED_DATE_FORMAT = new SimpleDateFormat(
+            "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
 
     static {
+        CREATION_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
+        LAST_MODIFIED_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
         /**
          * GMT timezone - all HTTP dates are on GMT
          */
@@ -111,36 +107,6 @@ public abstract class AbstractMethod implements IMethodExecutor {
      */
     protected static final int TEMP_TIMEOUT = 10;
 
-    
-    public static String lastModifiedDateFormat(final Date date) {
-        DateFormat df = thLastmodifiedDateFormat.get();
-        if( df == null ) {
-            df = new SimpleDateFormat(LAST_MODIFIED_DATE_FORMAT, Locale.US);
-            df.setTimeZone(TimeZone.getTimeZone("GMT"));
-            thLastmodifiedDateFormat.set( df );
-        }
-        return df.format(date);
-    }
-
-    public static String creationDateFormat(final Date date) {
-        DateFormat df = thCreationDateFormat.get();
-        if( df == null ) {
-            df = new SimpleDateFormat(CREATION_DATE_FORMAT);
-            df.setTimeZone(TimeZone.getTimeZone("GMT"));
-            thCreationDateFormat.set( df );
-        }
-        return df.format(date);
-    }
-
-    public static String getLocalDateFormat(final Date date, final Locale loc) {
-        DateFormat df = thLocalDateFormat.get();
-        if( df == null ) {
-            df = new SimpleDateFormat(LOCAL_DATE_FORMAT, loc);
-        }
-        return df.format(date);
-    }
-
-    
     /**
      * Return the relative path associated with this servlet.
      * 
@@ -252,7 +218,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
     /**
      * Get the ETag associated with a file.
      * 
-     * @param StoredObject
+     * @param so
      *      StoredObject to get resourceLength, lastModified and a hashCode of
      *      StoredObject
      * @return the ETag
@@ -329,8 +295,6 @@ public abstract class AbstractMethod implements IMethodExecutor {
      * @param resourceLocks
      * @param path
      *      path to the resource
-     * @param errorList
-     *      List of error to be displayed
      * @return true if no lock on a resource with the given path exists or if
      *  the If-Header corresponds to the locked resource
      * @throws IOException

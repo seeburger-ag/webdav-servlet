@@ -17,6 +17,7 @@
 package net.sf.webdav.fromcatalina;
 
 import java.io.UnsupportedEncodingException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TimeZone;
@@ -34,6 +35,16 @@ import javax.servlet.http.Cookie;
 public final class RequestUtil {
 
     /**
+     * The DateFormat to use for generating readable dates in cookies.
+     */
+    private static SimpleDateFormat FORMAT = new SimpleDateFormat(
+            " EEEE, dd-MMM-yy kk:mm:ss zz");
+
+    static {
+        FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
+    }
+
+    /**
      * Encode a cookie as per RFC 2109. The resulting string can be used as the
      * value for a <code>Set-Cookie</code> header.
      * 
@@ -43,7 +54,7 @@ public final class RequestUtil {
      */
     public static String encodeCookie(Cookie cookie) {
 
-        StringBuffer buf = new StringBuffer(cookie.getName());
+        StringBuilder buf = new StringBuilder(cookie.getName());
         buf.append("=");
         buf.append(cookie.getValue());
 
@@ -104,7 +115,7 @@ public final class RequestUtil {
 
         char content[] = new char[message.length()];
         message.getChars(0, message.length(), content, 0);
-        StringBuffer result = new StringBuffer(content.length + 50);
+        StringBuilder result = new StringBuilder(content.length + 50);
         for (int i = 0; i < content.length; i++) {
             switch (content[i]) {
             case '<':
