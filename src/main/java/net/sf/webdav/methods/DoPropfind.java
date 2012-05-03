@@ -17,7 +17,6 @@ package net.sf.webdav.methods;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -36,7 +35,6 @@ import net.sf.webdav.WebdavStatus;
 import net.sf.webdav.exceptions.AccessDeniedException;
 import net.sf.webdav.exceptions.LockFailedException;
 import net.sf.webdav.exceptions.WebdavException;
-import net.sf.webdav.fromcatalina.URLEncoder;
 import net.sf.webdav.fromcatalina.XMLHelper;
 import net.sf.webdav.fromcatalina.XMLWriter;
 import net.sf.webdav.locking.LockedObject;
@@ -190,7 +188,7 @@ public class DoPropfind extends AbstractMethod {
 
     /**
      * goes recursive through all folders. used by propfind
-     * 
+     *
      * @param currentPath
      *      the current path
      * @param req
@@ -232,7 +230,7 @@ public class DoPropfind extends AbstractMethod {
 
     /**
      * Propfind helper method.
-     * 
+     *
      * @param req
      *      The servlet request
      * @param generatedXML
@@ -302,9 +300,9 @@ public class DoPropfind extends AbstractMethod {
             generatedXML.writeElement("DAV::displayname", XMLWriter.OPENING);
             generatedXML.writeData(resourceName);
             generatedXML.writeElement("DAV::displayname", XMLWriter.CLOSING);
+            generatedXML
+            .writeProperty("DAV::getlastmodified", lastModified);
             if (!isFolder) {
-                generatedXML
-                        .writeProperty("DAV::getlastmodified", lastModified);
                 generatedXML.writeProperty("DAV::getcontentlength",
                         resourceLength);
                 String contentType = mimeType;
@@ -353,9 +351,9 @@ public class DoPropfind extends AbstractMethod {
                 generatedXML.writeElement("DAV::getcontenttype",
                         XMLWriter.NO_CONTENT);
                 generatedXML.writeElement("DAV::getetag", XMLWriter.NO_CONTENT);
-                generatedXML.writeElement("DAV::getlastmodified",
-                        XMLWriter.NO_CONTENT);
             }
+            generatedXML.writeElement("DAV::getlastmodified",
+                                      XMLWriter.NO_CONTENT);
             generatedXML
                     .writeElement("DAV::resourcetype", XMLWriter.NO_CONTENT);
             generatedXML.writeElement("DAV::supportedlock",
@@ -422,12 +420,8 @@ public class DoPropfind extends AbstractMethod {
                         generatedXML.writeProperty("DAV::getetag", getETag(so));
                     }
                 } else if (property.equals("DAV::getlastmodified")) {
-                    if (isFolder) {
-                        propertiesNotFound.add(property);
-                    } else {
-                        generatedXML.writeProperty("DAV::getlastmodified",
-                                lastModified);
-                    }
+                    generatedXML.writeProperty("DAV::getlastmodified",
+                            lastModified);
                 } else if (property.equals("DAV::resourcetype")) {
                     if (isFolder) {
                         generatedXML.writeElement("DAV::resourcetype",
