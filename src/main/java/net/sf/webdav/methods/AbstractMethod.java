@@ -109,7 +109,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
 
     /**
      * Return the relative path associated with this servlet.
-     * 
+     *
      * @param request
      *      The servlet request we are processing
      */
@@ -142,7 +142,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
     /**
      * creates the parent path from the given path by removing the last '/' and
      * everything after that
-     * 
+     *
      * @param path
      *      the path
      * @return parent path
@@ -157,7 +157,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
 
     /**
      * removes a / at the end of the path string, if present
-     * 
+     *
      * @param path
      *      the path
      * @return the path without trailing /
@@ -187,7 +187,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
 
     /**
      * reads the depth header from the request and returns it as a int
-     * 
+     *
      * @param req
      * @return the depth from the depth header
      */
@@ -206,7 +206,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
 
     /**
      * URL rewriter.
-     * 
+     *
      * @param path
      *      Path which has to be rewiten
      * @return the rewritten path
@@ -217,7 +217,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
 
     /**
      * Get the ETag associated with a file.
-     * 
+     *
      * @param so
      *      StoredObject to get resourceLength, lastModified and a hashCode of
      *      StoredObject
@@ -287,7 +287,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
      * the If-Header to make sure the If-Header corresponds to the locked
      * resource. Returning true if no lock exists or the If-Header is
      * corresponding to the locked resource
-     * 
+     *
      * @param req
      *      Servlet request
      * @param resp
@@ -342,7 +342,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
     /**
      * Send a multistatus element containing a complete error report to the
      * client.
-     * 
+     *
      * @param req
      *      Servlet request
      * @param resp
@@ -355,7 +355,6 @@ public abstract class AbstractMethod implements IMethodExecutor {
 
         resp.setStatus(WebdavStatus.SC_MULTI_STATUS);
 
-        String absoluteUri = req.getRequestURI();
         // String relativePath = getRelativePath(req);
 
         HashMap<String, String> namespaces = new HashMap<String, String>();
@@ -375,18 +374,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
             generatedXML.writeElement("DAV::response", XMLWriter.OPENING);
 
             generatedXML.writeElement("DAV::href", XMLWriter.OPENING);
-            String toAppend = null;
-            if (absoluteUri.endsWith(errorPath)) {
-                toAppend = absoluteUri;
 
-            } else if (absoluteUri.contains(errorPath)) {
-
-                int endIndex = absoluteUri.indexOf(errorPath)
-                        + errorPath.length();
-                toAppend = absoluteUri.substring(0, endIndex);
-            }
-            if (!toAppend.startsWith("/") && !toAppend.startsWith("http:"))
-                toAppend = "/" + toAppend;
             generatedXML.writeText(errorPath);
             generatedXML.writeElement("DAV::href", XMLWriter.CLOSING);
             generatedXML.writeElement("DAV::status", XMLWriter.OPENING);
