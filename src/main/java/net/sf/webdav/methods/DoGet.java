@@ -30,6 +30,8 @@ import net.sf.webdav.ITransaction;
 import net.sf.webdav.IWebdavStore;
 import net.sf.webdav.StoredObject;
 import net.sf.webdav.WebdavStatus;
+import net.sf.webdav.fromcatalina.RequestUtil;
+import net.sf.webdav.fromcatalina.URLEncoder;
 import net.sf.webdav.locking.ResourceLocks;
 
 public class DoGet extends DoHead {
@@ -137,14 +139,14 @@ public class DoGet extends DoHead {
                     childrenTemp.append("\">");
                     childrenTemp.append("<td>");
                     childrenTemp.append("<a href=\"");
-                    childrenTemp.append(child);
+                    childrenTemp.append(new URLEncoder().encode(child));
                     StoredObject obj= _store.getStoredObject(transaction, path+"/"+child);
                     if (obj.isFolder())
                     {
                         childrenTemp.append("/");
                     }
                     childrenTemp.append("\">");
-                    childrenTemp.append(child);
+                    childrenTemp.append(RequestUtil.filter(child));
                     childrenTemp.append("</a></td>");
                     if (obj.isFolder())
                     {
@@ -189,7 +191,7 @@ public class DoGet extends DoHead {
     /**
      * Return the CSS styles used to display the HTML representation
      * of the webdav content.
-     * 
+     *
      * @return String returning the CSS style sheet used to display result in html format
      */
     protected String getCSS()
@@ -251,7 +253,7 @@ public class DoGet extends DoHead {
 
     /**
      * Return this as the Date/Time format for displaying Creation + Modification dates
-     * 
+     *
      * @param browserLocale
      * @return DateFormat used to display creation and modification dates
      */
@@ -262,7 +264,7 @@ public class DoGet extends DoHead {
 
     /**
      * Return the header to be displayed in front of the folder content
-     * 
+     *
      * @param transaction
      * @param path
      * @param resp
@@ -272,12 +274,12 @@ public class DoGet extends DoHead {
     protected String getHeader(ITransaction transaction, String path,
             HttpServletResponse resp, HttpServletRequest req)
     {
-        return "<h1>Content of folder "+path+"</h1>";
+        return "<h1>Content of folder "+RequestUtil.filter(path)+"</h1>";
     }
 
     /**
      * Return the footer to be displayed after the folder content
-     * 
+     *
      * @param transaction
      * @param path
      * @param resp
