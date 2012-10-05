@@ -68,6 +68,16 @@ public abstract class AbstractMethod implements IMethodExecutor {
     protected static final SimpleDateFormat LAST_MODIFIED_DATE_FORMAT = new SimpleDateFormat(
             "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
 
+    /**
+     * Default behavior of webdav-servlet is to send multi-status-errors (HTTP-code 207).
+     * However this does not play well together with org.apache.webdav.lib.WebdavResource, which interprets them as success.
+     * So the default behavior is changed to NOT return multi-status-errors.
+     * This property can be used to return to the old behavior.
+     * @see #sendReport(HttpServletRequest, HttpServletResponse, Hashtable)
+     */
+    private static final boolean SEND_MULTI_STATUS_ERRORS = Boolean.getBoolean("net.sf.webdav.send-multi-status-errors");
+
+
     static {
         CREATION_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
         LAST_MODIFIED_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -353,6 +363,21 @@ public abstract class AbstractMethod implements IMethodExecutor {
     protected void sendReport(HttpServletRequest req, HttpServletResponse resp,
             Hashtable<String, Integer> errorList) throws IOException {
 
+        if(!SEND_MULTI_STATUS_ERRORS)
+        {
+            if (errorList == null || errorList.isEmpty())
+            {
+                resp.sendError(WebdavStatus.SC_METHOD_FAILURE);
+                return;
+            }
+
+            // get first error from list and use that for returning
+            String errorPath = errorList.keys().nextElement();
+            int errorCode = errorList.get(errorPath).intValue();
+            resp.sendError(errorCode, errorPath);
+            return;
+        }
+
         resp.setStatus(WebdavStatus.SC_MULTI_STATUS);
 
         // String relativePath = getRelativePath(req);
@@ -368,8 +393,8 @@ public abstract class AbstractMethod implements IMethodExecutor {
         Enumeration<String> pathList = errorList.keys();
         while (pathList.hasMoreElements()) {
 
-            String errorPath = (String) pathList.nextElement();
-            int errorCode = ((Integer) errorList.get(errorPath)).intValue();
+            String errorPath = pathList.nextElement();
+            int errorCode = errorList.get(errorPath).intValue();
 
             generatedXML.writeElement("DAV::response", XMLWriter.OPENING);
 
