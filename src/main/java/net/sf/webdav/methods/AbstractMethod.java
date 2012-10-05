@@ -68,16 +68,6 @@ public abstract class AbstractMethod implements IMethodExecutor {
     protected static final SimpleDateFormat LAST_MODIFIED_DATE_FORMAT = new SimpleDateFormat(
             "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
 
-    /**
-     * Default behavior of webdav-servlet is to send multi-status-errors (HTTP-code 207).
-     * However this does not play well together with org.apache.webdav.lib.WebdavResource, which interprets them as success.
-     * So the default behavior is changed to NOT return multi-status-errors.
-     * This property can be used to return to the old behavior.
-     * @see #sendReport(HttpServletRequest, HttpServletResponse, Hashtable)
-     */
-    private static final boolean SEND_MULTI_STATUS_ERRORS = Boolean.getBoolean("net.sf.webdav.send-multi-status-errors");
-
-
     static {
         CREATION_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
         LAST_MODIFIED_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -228,7 +218,7 @@ public abstract class AbstractMethod implements IMethodExecutor {
     /**
      * Get the ETag associated with a file.
      *
-     * @param so
+     * @param StoredObject
      *      StoredObject to get resourceLength, lastModified and a hashCode of
      *      StoredObject
      * @return the ETag
@@ -305,6 +295,8 @@ public abstract class AbstractMethod implements IMethodExecutor {
      * @param resourceLocks
      * @param path
      *      path to the resource
+     * @param errorList
+     *      List of error to be displayed
      * @return true if no lock on a resource with the given path exists or if
      *  the If-Header corresponds to the locked resource
      * @throws IOException
@@ -351,7 +343,8 @@ public abstract class AbstractMethod implements IMethodExecutor {
 
     /**
      * Send a multistatus element containing a complete error report to the
-     * client.
+     * client. If the errorList contains only one error, send the error
+     * directly without wrapping it in a multistatus message.
      *
      * @param req
      *      Servlet request
@@ -363,60 +356,67 @@ public abstract class AbstractMethod implements IMethodExecutor {
     protected void sendReport(HttpServletRequest req, HttpServletResponse resp,
             Hashtable<String, Integer> errorList) throws IOException {
 
-        if(!SEND_MULTI_STATUS_ERRORS)
+        if (errorList.size() == 1) {
+            int code = errorList.elements().nextElement().intValue();
+            if (WebdavStatus.getStatusText(code) != "") {
+                resp.sendError(code, WebdavStatus.getStatusText(code));
+            } else {
+                resp.sendError(code);
+            }
+        }
+        else
         {
-            if (errorList == null || errorList.isEmpty())
-            {
-                resp.sendError(WebdavStatus.SC_METHOD_FAILURE);
-                return;
+            resp.setStatus(WebdavStatus.SC_MULTI_STATUS);
+
+//            String absoluteUri = req.getRequestURI();
+            // String relativePath = getRelativePath(req);
+
+            HashMap<String, String> namespaces = new HashMap<String, String>();
+            namespaces.put("DAV:", "D");
+
+            XMLWriter generatedXML = new XMLWriter(namespaces);
+            generatedXML.writeXMLHeader();
+
+            generatedXML.writeElement("DAV::multistatus", XMLWriter.OPENING);
+
+            Enumeration<String> pathList = errorList.keys();
+            while (pathList.hasMoreElements()) {
+
+                String errorPath = pathList.nextElement();
+                int errorCode = errorList.get(errorPath).intValue();
+
+                generatedXML.writeElement("DAV::response", XMLWriter.OPENING);
+
+                generatedXML.writeElement("DAV::href", XMLWriter.OPENING);
+//                String toAppend = null;
+//                if (absoluteUri.endsWith(errorPath)) {
+//                    toAppend = absoluteUri;
+//
+//                } else if (absoluteUri.contains(errorPath)) {
+//
+//                    int endIndex = absoluteUri.indexOf(errorPath)
+//                            + errorPath.length();
+//                    toAppend = absoluteUri.substring(0, endIndex);
+//                }
+//                if (!toAppend.startsWith("/") && !toAppend.startsWith("http:"))
+//                    toAppend = "/" + toAppend;
+                generatedXML.writeText(errorPath);
+                generatedXML.writeElement("DAV::href", XMLWriter.CLOSING);
+                generatedXML.writeElement("DAV::status", XMLWriter.OPENING);
+                generatedXML.writeText("HTTP/1.1 " + errorCode + " "
+                        + WebdavStatus.getStatusText(errorCode));
+                generatedXML.writeElement("DAV::status", XMLWriter.CLOSING);
+
+                generatedXML.writeElement("DAV::response", XMLWriter.CLOSING);
+
             }
 
-            // get first error from list and use that for returning
-            String errorPath = errorList.keys().nextElement();
-            int errorCode = errorList.get(errorPath).intValue();
-            resp.sendError(errorCode, errorPath);
-            return;
+            generatedXML.writeElement("DAV::multistatus", XMLWriter.CLOSING);
+
+            Writer writer = resp.getWriter();
+            writer.write(generatedXML.toString());
+            writer.close();
         }
-
-        resp.setStatus(WebdavStatus.SC_MULTI_STATUS);
-
-        // String relativePath = getRelativePath(req);
-
-        HashMap<String, String> namespaces = new HashMap<String, String>();
-        namespaces.put("DAV:", "D");
-
-        XMLWriter generatedXML = new XMLWriter(namespaces);
-        generatedXML.writeXMLHeader();
-
-        generatedXML.writeElement("DAV::multistatus", XMLWriter.OPENING);
-
-        Enumeration<String> pathList = errorList.keys();
-        while (pathList.hasMoreElements()) {
-
-            String errorPath = pathList.nextElement();
-            int errorCode = errorList.get(errorPath).intValue();
-
-            generatedXML.writeElement("DAV::response", XMLWriter.OPENING);
-
-            generatedXML.writeElement("DAV::href", XMLWriter.OPENING);
-
-            generatedXML.writeText(errorPath);
-            generatedXML.writeElement("DAV::href", XMLWriter.CLOSING);
-            generatedXML.writeElement("DAV::status", XMLWriter.OPENING);
-            generatedXML.writeText("HTTP/1.1 " + errorCode + " "
-                    + WebdavStatus.getStatusText(errorCode));
-            generatedXML.writeElement("DAV::status", XMLWriter.CLOSING);
-
-            generatedXML.writeElement("DAV::response", XMLWriter.CLOSING);
-
-        }
-
-        generatedXML.writeElement("DAV::multistatus", XMLWriter.CLOSING);
-
-        Writer writer = resp.getWriter();
-        writer.write(generatedXML.toString());
-        writer.close();
-
     }
 
 }
