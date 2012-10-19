@@ -1,12 +1,12 @@
 /*
  * Copyright 1999,2004 The Apache Software Foundation.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,6 +18,8 @@ package net.sf.webdav;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.servlet.ServletException;
 
@@ -25,10 +27,10 @@ import net.sf.webdav.exceptions.WebdavException;
 
 /**
  * Servlet which provides support for WebDAV level 2.
- * 
+ *
  * the original class is org.apache.catalina.servlets.WebdavServlet by Remy
  * Maucherat, which was heavily changed
- * 
+ *
  * @author Remy Maucherat
  */
 
@@ -109,6 +111,17 @@ public class WebdavServlet extends WebDavServletBean {
                                 + file + "' for this web container");
             }
         }
+
+        // SEEBURGER START
+        // Replace all the occurrences of variables in the rootPath with their matching values from the system properties.
+        // e.g. ${bisas.data} will be replaced with sth. like C:/BIS/data
+        Set<Entry<Object, Object>> properties = System.getProperties().entrySet();
+        for (Entry<Object, Object> propertyEntry : properties)
+        {
+            rootPath = rootPath.replace("${" + (String) propertyEntry.getKey() + '}', (String) propertyEntry.getValue());
+        }
+        // SEEBURGER END
+
         return new File(rootPath);
     }
 
