@@ -32,7 +32,7 @@ import net.sf.webdav.exceptions.WebdavException;
 
 /**
  * Reference Implementation of WebdavStore
- * 
+ *
  * @author joa
  * @author re
  */
@@ -83,7 +83,7 @@ public class LocalFileSystemStore implements IWebdavStore {
             throws WebdavException {
         LOG.trace("LocalFileSystemStore.createFolder(" + uri + ")");
         File file = new File(_root, uri);
-        if (!file.mkdir())
+        if (!file.mkdirs())
             throw new WebdavException("cannot create folder: " + uri);
     }
 
