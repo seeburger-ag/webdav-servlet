@@ -83,7 +83,7 @@ public class LocalFileSystemStore implements IWebdavStore {
             throws WebdavException {
         LOG.trace("LocalFileSystemStore.createFolder(" + uri + ")");
         File file = new File(_root, uri);
-        if (!file.mkdirs())
+        if (!file.exists() && !file.mkdirs())
             throw new WebdavException("cannot create folder: " + uri);
     }
 
