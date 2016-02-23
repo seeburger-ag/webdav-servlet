@@ -169,7 +169,7 @@ public class DoDelete extends AbstractMethod {
      * @throws WebdavException
      *      if an error in the underlying store occurs
      */
-    private void deleteFolder(ITransaction transaction, String path,
+    protected void deleteFolder(ITransaction transaction, String path,
             Hashtable<String, Integer> errorList, HttpServletRequest req,
             HttpServletResponse resp) throws WebdavException {
 
@@ -203,6 +203,24 @@ public class DoDelete extends AbstractMethod {
         }
         so = null;
 
+    }
+
+
+    protected IWebdavStore getStore()
+    {
+        return _store;
+    }
+
+
+    protected ResourceLocks getResourceLocks()
+    {
+        return _resourceLocks;
+    }
+
+
+    protected boolean isReadOnly()
+    {
+        return _readOnly;
     }
 
 }

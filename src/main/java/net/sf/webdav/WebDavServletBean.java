@@ -18,17 +18,8 @@ import net.sf.webdav.fromcatalina.MD5Encoder;
 import net.sf.webdav.locking.ResourceLocks;
 import net.sf.webdav.methods.DoCopy;
 import net.sf.webdav.methods.DoDelete;
-import net.sf.webdav.methods.DoGet;
-import net.sf.webdav.methods.DoHead;
-import net.sf.webdav.methods.DoLock;
-import net.sf.webdav.methods.DoMkcol;
-import net.sf.webdav.methods.DoMove;
-import net.sf.webdav.methods.DoNotImplemented;
-import net.sf.webdav.methods.DoOptions;
-import net.sf.webdav.methods.DoPropfind;
-import net.sf.webdav.methods.DoProppatch;
-import net.sf.webdav.methods.DoPut;
-import net.sf.webdav.methods.DoUnlock;
+import net.sf.webdav.methods.FactoryMethod;
+import net.sf.webdav.methods.FactoryMethodImpl;
 
 public class WebDavServletBean extends HttpServlet {
 
@@ -61,6 +52,14 @@ public class WebDavServletBean extends HttpServlet {
     }
 
     public void init(IWebdavStore store, String dftIndexFile,
+                     String insteadOf404, int nocontentLenghHeaders,
+                     boolean lazyFolderCreationOnPut) throws ServletException {
+        init(new FactoryMethodImpl(), store, dftIndexFile,
+             insteadOf404, nocontentLenghHeaders,
+             lazyFolderCreationOnPut);
+    }
+
+    public void init(FactoryMethod factory, IWebdavStore store, String dftIndexFile,
             String insteadOf404, int nocontentLenghHeaders,
             boolean lazyFolderCreationOnPut) throws ServletException {
 
@@ -72,30 +71,44 @@ public class WebDavServletBean extends HttpServlet {
             }
         };
 
-        register("GET", new DoGet(store, dftIndexFile, insteadOf404, _resLocks,
+        register("GET", factory.doGet(store, dftIndexFile, insteadOf404, _resLocks,
                 mimeTyper, nocontentLenghHeaders));
-        register("HEAD", new DoHead(store, dftIndexFile, insteadOf404,
+        register("HEAD", factory.doHead(store, dftIndexFile, insteadOf404,
                 _resLocks, mimeTyper, nocontentLenghHeaders));
-        DoDelete doDelete = (DoDelete) register("DELETE", new DoDelete(store,
+        DoDelete doDelete = (DoDelete) register("DELETE", factory.doDelete(store,
                 _resLocks, READ_ONLY));
-        DoCopy doCopy = (DoCopy) register("COPY", new DoCopy(store, _resLocks,
+        DoCopy doCopy = (DoCopy) register("COPY", factory.doCopy(store, _resLocks,
                 doDelete, READ_ONLY));
-        register("LOCK", new DoLock(store, _resLocks, READ_ONLY));
-        register("UNLOCK", new DoUnlock(store, _resLocks, READ_ONLY));
-        register("MOVE", new DoMove(_resLocks, doDelete, doCopy, READ_ONLY));
-        register("MKCOL", new DoMkcol(store, _resLocks, READ_ONLY));
-        register("OPTIONS", new DoOptions(store, _resLocks));
-        register("PUT", new DoPut(store, _resLocks, READ_ONLY,
+        register("LOCK", factory.doLock(store, _resLocks, READ_ONLY));
+        register("UNLOCK", factory.doUnlock(store, _resLocks, READ_ONLY));
+        register("MOVE", factory.doMove(_resLocks, doDelete, doCopy, READ_ONLY));
+        register("MKCOL", factory.doMkcol(store, _resLocks, READ_ONLY));
+        register("OPTIONS", factory.doOptions(store, _resLocks));
+        register("PUT", factory.doPut(store, _resLocks, READ_ONLY,
                 lazyFolderCreationOnPut));
-        register("PROPFIND", new DoPropfind(store, _resLocks, mimeTyper));
-        register("PROPPATCH", new DoProppatch(store, _resLocks, READ_ONLY));
-        register("*NO*IMPL*", new DoNotImplemented(READ_ONLY));
+        register("PROPFIND", factory.doPropfind(store, _resLocks, mimeTyper));
+        register("PROPPATCH", factory.doProppatch(store, _resLocks, READ_ONLY));
+        register("*NO*IMPL*", factory.doNotImplemented(READ_ONLY));
     }
 
-    private IMethodExecutor register(String methodName, IMethodExecutor method) {
+
+    protected IMethodExecutor register(String methodName, IMethodExecutor method) {
         _methodMap.put(methodName, method);
         return method;
     }
+
+
+    protected boolean isReadOnly()
+    {
+        return WebDavServletBean.READ_ONLY;
+    }
+
+
+    public ResourceLocks getResLocks()
+    {
+        return _resLocks;
+    }
+
 
     /**
      * Handles the special WebDAV methods.
