@@ -23,8 +23,9 @@
     </licenses>
 
     <scm>
-        <developerConnection>scm:cvs:ext:cvs.seeburger.de:/var/cvs:Products/Misc/webdav-servlet</developerConnection>
-  </scm>
+        <developerConnection>scm:git:https://github.com/seeburger-ag/webdav-servlet.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
 
     <dependencies>
         <dependency>
