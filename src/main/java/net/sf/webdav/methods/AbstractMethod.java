@@ -28,6 +28,7 @@ import java.util.TimeZone;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -43,6 +44,9 @@ import net.sf.webdav.locking.IResourceLocks;
 import net.sf.webdav.locking.LockedObject;
 
 public abstract class AbstractMethod implements IMethodExecutor {
+
+    private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory
+                    .getLogger(AbstractMethod.class);
 
     /**
      * Array containing the safe characters set.
@@ -68,7 +72,10 @@ public abstract class AbstractMethod implements IMethodExecutor {
     protected static final SimpleDateFormat LAST_MODIFIED_DATE_FORMAT = new SimpleDateFormat(
             "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
 
-    static {
+    protected static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY = DocumentBuilderFactory.newInstance();
+
+    static
+    {
         CREATION_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
         LAST_MODIFIED_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
         /**
@@ -80,6 +87,24 @@ public abstract class AbstractMethod implements IMethodExecutor {
         URL_ENCODER.addSafeCharacter('.');
         URL_ENCODER.addSafeCharacter('*');
         URL_ENCODER.addSafeCharacter('/');
+
+        DOCUMENT_BUILDER_FACTORY.setNamespaceAware(true);
+        DOCUMENT_BUILDER_FACTORY.setXIncludeAware(false);
+        DOCUMENT_BUILDER_FACTORY.setExpandEntityReferences(false);
+
+        try
+        {
+            DOCUMENT_BUILDER_FACTORY.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            boolean disallowDoctypeDecl = getBooleanSetting("webdav.request.disallow.doctype.decl", true);
+            DOCUMENT_BUILDER_FACTORY.setFeature("http://apache.org/xml/features/disallow-doctype-decl", disallowDoctypeDecl);
+            DOCUMENT_BUILDER_FACTORY.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            DOCUMENT_BUILDER_FACTORY.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            DOCUMENT_BUILDER_FACTORY.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        }
+        catch (ParserConfigurationException e)
+        {
+            throw new RuntimeException("Error in XML document builder factory configuration", e);
+        }
     }
 
     /**
@@ -169,18 +194,21 @@ public abstract class AbstractMethod implements IMethodExecutor {
         return path;
     }
 
+
     /**
      * Return JAXP document builder instance.
      */
-    protected DocumentBuilder getDocumentBuilder() throws ServletException {
+    protected DocumentBuilder getDocumentBuilder() throws ServletException
+    {
         DocumentBuilder documentBuilder = null;
-        DocumentBuilderFactory documentBuilderFactory = null;
-        try {
-            documentBuilderFactory = DocumentBuilderFactory.newInstance();
-            documentBuilderFactory.setNamespaceAware(true);
-            documentBuilder = documentBuilderFactory.newDocumentBuilder();
-        } catch (ParserConfigurationException e) {
-            throw new ServletException("jaxp failed");
+        try
+        {
+            documentBuilder = DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
+        }
+        catch (ParserConfigurationException e)
+        {
+            LOG.error("Could not create document builder due to configuration error", e);
+            throw new ServletException("Unable to parse XML request");
         }
         return documentBuilder;
     }
@@ -416,6 +444,30 @@ public abstract class AbstractMethod implements IMethodExecutor {
             Writer writer = resp.getWriter();
             writer.write(generatedXML.toString());
             writer.close();
+        }
+    }
+
+
+    static boolean getBooleanSetting(String key, boolean def)
+    {
+        String property = System.getProperty(key);
+        if (isEmpty(property))
+        {
+            return def;
+        }
+        return property.trim().equalsIgnoreCase("true") || property.trim().equalsIgnoreCase("1");
+    }
+
+
+    static boolean isEmpty(String str)
+    {
+        if (str == null)
+        {
+            return true;
+        }
+        else
+        {
+            return str.trim().isEmpty();
         }
     }
 
