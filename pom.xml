@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.seeburger.buildtools</groupId>
         <artifactId>releng-seeburger</artifactId>
-        <version>1.0.14</version>
+        <version>1.2.1</version>
     </parent>
 
     <groupId>net.sf.webdav-servlet</groupId>
@@ -22,6 +22,10 @@
             <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
+
+    <properties>
+        <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
+    </properties>
 
     <scm>
         <connection>scm:git:git@github.com:seeburger-ag/webdav-servlet.git</connection>
