@@ -139,7 +139,11 @@ public class DoGet extends DoHead {
                     childrenTemp.append("\">");
                     childrenTemp.append("<td>");
                     childrenTemp.append("<a href=\"");
-                    childrenTemp.append(new URLEncoder().encode(child));
+                    String relPath = child;
+                    if (child.startsWith("/")) {
+                        relPath = relPath.substring(1);
+                    }
+                    childrenTemp.append(new URLEncoder().encode(relPath));
                     StoredObject obj= _store.getStoredObject(transaction, path+"/"+child);
                     if (obj.isFolder())
                     {

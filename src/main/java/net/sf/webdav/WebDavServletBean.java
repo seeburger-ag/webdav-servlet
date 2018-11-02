@@ -23,6 +23,9 @@ import net.sf.webdav.methods.FactoryMethodImpl;
 
 public class WebDavServletBean extends HttpServlet {
 
+    /** field <code>serialVersionUID</code> */
+    private static final long serialVersionUID = -8044499971395347547L;
+
     private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory
             .getLogger(WebDavServletBean.class);
 
@@ -53,7 +56,7 @@ public class WebDavServletBean extends HttpServlet {
 
     public void init(IWebdavStore store, String dftIndexFile,
                      String insteadOf404, int nocontentLenghHeaders,
-                     boolean lazyFolderCreationOnPut) throws ServletException {
+                     boolean lazyFolderCreationOnPut) {
         init(new FactoryMethodImpl(), store, dftIndexFile,
              insteadOf404, nocontentLenghHeaders,
              lazyFolderCreationOnPut);
@@ -61,7 +64,7 @@ public class WebDavServletBean extends HttpServlet {
 
     public void init(FactoryMethod factory, IWebdavStore store, String dftIndexFile,
             String insteadOf404, int nocontentLenghHeaders,
-            boolean lazyFolderCreationOnPut) throws ServletException {
+            boolean lazyFolderCreationOnPut) {
 
         _store = store;
 
@@ -132,11 +135,9 @@ public class WebDavServletBean extends HttpServlet {
             resp.setStatus(WebdavStatus.SC_OK);
 
             try {
-                IMethodExecutor methodExecutor = (IMethodExecutor) _methodMap
-                        .get(methodName);
+                IMethodExecutor methodExecutor = _methodMap.get(methodName);
                 if (methodExecutor == null) {
-                    methodExecutor = (IMethodExecutor) _methodMap
-                            .get("*NO*IMPL*");
+                    methodExecutor = _methodMap.get("*NO*IMPL*");
                 }
 
                 methodExecutor.execute(transaction, req, resp);
@@ -150,8 +151,9 @@ public class WebDavServletBean extends HttpServlet {
                  */
                 if (req.getContentLength() != 0 && req.getInputStream().available() > 0) {
                     if (LOG.isTraceEnabled()) { LOG.trace("Clear not consumed data!"); }
-                    while (req.getInputStream().available() > 0) {
-                        req.getInputStream().read();
+                    int b = 0;
+                    while (req.getInputStream().available() > 0 && b != -1) {
+                        b = req.getInputStream().read();
                     }
                 }
                 needRollback = false;
