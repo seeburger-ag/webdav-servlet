@@ -8,6 +8,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 
 import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -143,20 +144,37 @@ public class WebDavServletBean extends HttpServlet {
                 methodExecutor.execute(transaction, req, resp);
 
                 _store.commit(transaction);
+                needRollback = false;
+
                 /** Clear not consumed data
                  *
                  * Clear input stream if available otherwise later access
                  * include current input.  These cases occur if the client
                  * sends a request with body to an not existing resource.
                  */
-                if (req.getContentLength() != 0 && req.getInputStream().available() > 0) {
-                    if (LOG.isTraceEnabled()) { LOG.trace("Clear not consumed data!"); }
-                    int b = 0;
-                    while (req.getInputStream().available() > 0 && b != -1) {
-                        b = req.getInputStream().read();
+                if (req.getContentLength() != 0)
+                {
+                    // important should only be that it is closed if present and not already closed (like in PUT)
+                    // Servlet 3.1 would have javax.servlet.ServletInputStream#isFinished
+                    try (final ServletInputStream inputStream = req.getInputStream())
+                    {
+                        if (inputStream.available() > 0)
+                        {
+                            if (LOG.isTraceEnabled()) { LOG.trace("Clear not consumed data!"); }
+                            try
+                            {
+                                int b = 0;
+                                while (inputStream.available() > 0 && b != -1) {
+                                    b = inputStream.read();
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                LOG.debug("Problem consuming ServletInputStream. Closed anyhow. Ex=" + ex.toString());
+                            }
+                        }
                     }
                 }
-                needRollback = false;
             } catch (IOException e) {
                 java.io.StringWriter sw = new java.io.StringWriter();
                 java.io.PrintWriter pw = new java.io.PrintWriter(sw);
