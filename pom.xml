@@ -9,7 +9,7 @@
     <groupId>net.sf.webdav-servlet</groupId>
     <artifactId>webdav-servlet</artifactId>
     <packaging>jar</packaging>
-    <version>2.0.1-SEE11</version>
+    <version>2.0.1-SEE12-SNAPSHOT</version>
 
     <description>
         ... a servlet that brings easy WebDAV access to any store, only 1 interface needs to be implemented. This is a fork of http://sourceforge.net/projects/webdav-servlet/
@@ -29,7 +29,7 @@
     <scm>
         <connection>scm:git:git@github.com:seeburger-ag/webdav-servlet.git</connection>
         <developerConnection>scm:git:git@github.com:seeburger-ag/webdav-servlet.git</developerConnection>
-      <tag>webdav-servlet-2.0.1-SEE11</tag>
+      <tag>HEAD</tag>
   </scm>
 
     <dependencies>
