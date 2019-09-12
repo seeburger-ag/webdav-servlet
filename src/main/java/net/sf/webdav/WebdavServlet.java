@@ -19,6 +19,7 @@ package net.sf.webdav;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.servlet.ServletException;
@@ -115,10 +116,15 @@ public class WebdavServlet extends WebDavServletBean {
         // SEEBURGER START
         // Replace all the occurrences of variables in the rootPath with their matching values from the system properties.
         // e.g. ${bisas.data} will be replaced with sth. like C:/BIS/data
-        Set<Entry<Object, Object>> properties = System.getProperties().entrySet();
-        for (Entry<Object, Object> propertyEntry : properties)
-        {
-            rootPath = rootPath.replace("${" + (String) propertyEntry.getKey() + '}', (String) propertyEntry.getValue());
+        // [90395] iterating over sysProps.keySet() directly is not thread-safe and may throw ConcurrentMod.Ex.,
+        // so first get the keys and then query their values
+        final Properties sysProps = System.getProperties();
+        Set<String> keys = sysProps.stringPropertyNames();
+        for (String key : keys) {
+            String value = sysProps.getProperty(key);
+            if (value != null ) { // value can be null if removed in meantime, but unlikely
+                rootPath = rootPath.replace("${" + key + '}', value);
+            }
         }
         // SEEBURGER END
 
